@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#142e35" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon-180.png" />
+    <link rel="icon" href="./icon-192.png" />
+    <link rel="stylesheet" href="./preflight.css" />
+    <link rel="stylesheet" href="./style.css" />
+    <title>Career Shift.</title>
+  </head>
+  <body>
+    <div id="app">読み込み中…</div>
+    <dialog aria-label="編集フォーム"></dialog>
+    <div id="notice" role="status" hidden></div>
+    <input type="file" accept="application/json,.json" id="restore" hidden />
+    <script src="./vendor/react.js"></script>
+    <script src="./vendor/react-dom.js"></script>
+    <script src="./vendor/prop-types.js"></script>
+    <script src="./vendor/recharts.js"></script>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
