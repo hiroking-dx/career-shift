@@ -7,6 +7,7 @@ import {
   iso,
   defaults,
   fresh,
+  upgrade,
   valid,
   statuses,
   stages,
@@ -18,12 +19,22 @@ import { openState, saveState, isNewWorkspace } from './storage.js'
 import { esc as h, calendarFile, download, csv, resume } from './format.js'
 import { ui, shell, control, pages,           } from './view.js'
 import { renderCharts, disposeCharts, renderDialog, disposeDialog } from './components.js'
+import {Cloud} from './cloud.js'
 const root = document.querySelector             ('#app') ,
   dlg = document.querySelector                   ('dialog') ,
   notice = document.querySelector             ('#notice') 
 let state       ,
   busy = false,
   timer = 0
+const cloud=new Cloud({
+  state:()=>state,available:()=>!busy&&!dlg.open,
+  redraw:()=>{if(cloud.locked&&dlg.open)dlg.close();paint()},
+  apply:async(data,cp,recovery,first)=>{
+    if(busy||dlg.open)throw Error('編集の完了後に再同期します。')
+    busy=true
+    try{await saveState(data,cp,recovery,first);state=data;paint()}finally{busy=false}
+  }
+})
 function tell(msg        ) {
   notice.textContent = msg
   notice.hidden = false
@@ -32,6 +43,7 @@ function tell(msg        ) {
 }
 function paint() {
   disposeCharts()
+  if(cloud.locked){root.innerHTML='<section class="card"><h1>Career Shift.</h1><p>この端末のデータを開くには、利用登録したGoogleアカウントでログインしてください。</p><button data-action="cloud-login">Googleでログイン</button><p role="status" id="lock-status"></p></section>';cloud.display();return}
   document.documentElement.dataset.theme =
     state.settings.theme === 'ダーク'
       ? 'dark'
@@ -40,6 +52,7 @@ function paint() {
       : 'auto'
   root.innerHTML = shell(state)
   renderCharts(root)
+  cloud.display()
   document.title = pages[ui.page][0] + ' · Career Shift.'
 }
 function page(p      ) {
@@ -51,7 +64,7 @@ function page(p      ) {
   window.scrollTo(0, 0)
 }
 async function commit(change                    , close = false) {
-  if (busy) return false
+  if (busy||cloud.locked) return false
   busy = true
   try {
     const copy = structuredClone(state)
@@ -60,6 +73,7 @@ async function commit(change                    , close = false) {
     state = copy
     if (close && dlg.open) dlg.close()
     paint()
+    cloud.edited()
     tell('保存しました')
     return true
   } catch (e) {
@@ -185,6 +199,13 @@ function resolvePage() {
   return Object.hasOwn(pages, p) ? (p        ) : 'home'
 }
 function action(a        ) {
+  if(a.startsWith('cloud-')){void cloud.action(a.slice(6));return}
+  if(cloud.locked)return
+  if(a.startsWith('share-analysis:')){
+    const r=state.rows.analysis.find(x=>x.id===a.slice(15))
+    if(r)download('自己分析.txt',schema.analysis.map(f=>f.label+'：'+r[f.key]).join('\n\n'),'text/plain;charset=utf-8')
+    return
+  }
   const [op, k, id] = a.split(':')
   if (op === 'new') return editor(k        )
   if (op === 'edit') return editor(k        , id)
@@ -270,7 +291,7 @@ document.addEventListener('change', async (e) => {
     try {
       const file = el.files[0]
       if (file.size > 20e6) throw Error('20 MB以下のJSONを選択してください。')
-      const value          = JSON.parse(await file.text())
+      const value          = upgrade(JSON.parse(await file.text()))
       if (!valid(value))
         throw Error('対応するバージョン・形式のバックアップを選択してください。')
       if (confirm('現在のデータをこのバックアップの内容で置き換えますか？'))
@@ -352,6 +373,7 @@ async function boot() {
     const initial = new URLSearchParams(location.hash.slice(1)).get('initial')
     if (initial) history.replaceState(null, '', location.pathname + location.search)
     state = await openState()
+    await cloud.init()
     if (initial && isNewWorkspace()) {
       const profile          = JSON.parse(initial)
       if (profile && typeof profile === 'object') {

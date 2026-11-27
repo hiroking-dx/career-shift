@@ -1,4 +1,4 @@
-                                                                                         
+                                                                                                      
                                                                        
                                                                                     
 export const field = (
@@ -119,6 +119,11 @@ export const schema                        = {
     select('status', '取得状況', ['学習中', '受験予定', '結果待ち', '取得済み']),
     note,
   ],
+  analysis: [
+    name('テーマ'), area('strength','強み・得意なこと'), area('episode','根拠となる経験'),
+    area('values','仕事で大切にしたいこと'), area('direction','希望する仕事との接点'),
+    area('next','次に確かめたいこと'),
+  ],
   notes: [
     name('タイトル'),
     area('body', '本文（Markdown）'),
@@ -201,7 +206,7 @@ export function fresh()        {
     cat: cats[i],
     milestone: j === 8 ? 'はい' : 'いいえ',
   }))
-  return { version: 1, settings, money, rows, history: [] }
+  return { version: 2, settings, money, rows, history: [] }
 }
 export function finance(s       , today = localDay()) {
   const m = (k        ) => Number(s.money[k])
@@ -308,6 +313,11 @@ export function validateFields(obj         , fs         )                       
     }) && !(r.start && r.end && String(r.end) < String(r.start))
   )
 }
+export function upgrade(value        )         {
+  if (!value || typeof value !== 'object' || !('version' in value) || value.version !== 1) return value
+  if (!('rows' in value) || !value.rows || typeof value.rows !== 'object' || 'analysis' in value.rows) return value
+  return {...value, version:2, rows:{...value.rows, analysis:[]}}
+}
 export function valid(data         )                {
   if (!data || typeof data !== 'object') return false
   const s = data         
@@ -324,7 +334,7 @@ export function valid(data         )                {
   )
     return false
   return (
-    s.version === 1 &&
+    s.version === 2 &&
     validateFields(s.settings, settingsFields) &&
     validateFields(s.money, moneyFields) &&
     +s.money.goal > 0 &&

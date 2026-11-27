@@ -31,6 +31,7 @@ export const pages                                 = {
   study: ['資格・学習', 'graduation-cap'],
   money: ['資金管理', 'wallet'],
   notes: ['メモ', 'notebook-pen'],
+  analysis: ['自己分析', 'notebook-pen'],
   settings: ['設定・データ', 'settings'],
   more: ['その他', 'ellipsis'],
 }
@@ -101,7 +102,7 @@ export function shell(s       ) {
       'wins',
       'study',
       'money',
-      'notes',
+      'analysis','notes',
     ]          
   )
     .map((x) => nav(x))
@@ -126,6 +127,7 @@ export function shell(s       ) {
       study: 'LEARNING',
       money: 'FINANCE',
       notes: 'NOTES',
+        analysis: 'SELF ANALYSIS',
       settings: 'SETTINGS',
       more: 'WORKSPACE',
     }[p] +
@@ -357,6 +359,10 @@ function recordCard(k      , r     , s       ) {
     meta = r.status + ' · 試験 ' + short(r.exam)
     const rate = +r.goal ? Math.round((+r.actual / +r.goal) * 100) : 0
     details = pct(rate) + '<small>' + r.actual + ' / ' + r.goal + ' 時間　' + rate + '%</small>'
+  }
+  if(k==='analysis'){
+    details=schema.analysis.slice(1).filter(f=>r[f.key]).map(f=>'<h4>'+h(f.label)+'</h4><p class="analysis-text">'+h(r[f.key])+'</p>').join('')
+      +btn('share-analysis:'+r.id,'ChatGPT用テキストを保存','download')
   }
   if (k === 'notes') {
     meta = (r.pin === 'はい' ? '固定 · ' : '') + r.tags
@@ -727,6 +733,7 @@ function pageContent(s       ) {
     )
   if (p === 'settings')
     return (
+      '<section class="card" id="cloud-panel"></section>'+
       panel(
         'プロフィールと目標',
         metrics([
