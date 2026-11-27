@@ -20,6 +20,7 @@ import { esc as h, calendarFile, download, csv, resume } from './format.js'
 import { ui, shell, control, pages,           } from './view.js'
 import { renderCharts, disposeCharts, renderDialog, disposeDialog } from './components.js'
 import {Cloud} from './cloud.js'
+import {analysisPrompt, analysisReply} from './exchange.js'
 const root = document.querySelector             ('#app') ,
   dlg = document.querySelector                   ('dialog') ,
   notice = document.querySelector             ('#notice') 
@@ -201,9 +202,23 @@ function resolvePage() {
 function action(a        ) {
   if(a.startsWith('cloud-')){void cloud.action(a.slice(6));return}
   if(cloud.locked)return
+  if(a==='preview-analysis'){
+    const input=document.querySelector                     ('#analysis-reply') 
+    try{
+      const draft=analysisReply(input.value)
+      if(state.rows.analysis.some(r=>schema.analysis.every(f=>r[f.key]===draft[f.key])))
+        throw Error('同じ自己分析が登録されています。')
+      editor('analysis',undefined,draft)
+    }catch(e){
+      document.querySelector('#analysis-error') .textContent=e instanceof SyntaxError
+        ? 'JSONを読み取れません。回答に含まれるJSON部分を貼り付けてください。'
+        : (e         ).message
+    }
+    return
+  }
   if(a.startsWith('share-analysis:')){
     const r=state.rows.analysis.find(x=>x.id===a.slice(15))
-    if(r)download('自己分析.txt',schema.analysis.map(f=>f.label+'：'+r[f.key]).join('\n\n'),'text/plain;charset=utf-8')
+    download('自己分析-ChatGPT依頼文.txt',analysisPrompt(r),'text/plain;charset=utf-8')
     return
   }
   const [op, k, id] = a.split(':')

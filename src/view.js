@@ -492,6 +492,11 @@ function records(k      , s       ) {
       (!r.length ? empty('該当する項目はありません。右上の「追加」から登録できます。') : '')
   return (
     toolbar(modes, k === 'tasks' ? [...statuses, ...cats, '高', '中', '低'] : [], true) +
+    (k === 'analysis' ? '<details class="card"><summary>ChatGPTと自己分析する</summary><p>依頼文をChatGPTに貼り付けて対話し、最後のJSONをここに貼り付けてください。</p>' +
+      btn('share-analysis:', '新しい自己分析の依頼文を保存', 'download') +
+      '<p><label class="field">ChatGPTの回答（JSON）<textarea id="analysis-reply" rows="5" maxlength="60000"></textarea></label></p>' +
+      btn('preview-analysis', '取り込み内容を確認', 'plus') +
+      '<p role="alert" id="analysis-error"></p></details>' : '') +
     content +
     (k === 'study' && r.length
       ? panel('学習時間（時間）', bars(r.map((x) => [x.name, +x.actual])))
@@ -749,7 +754,7 @@ function pageContent(s       ) {
           btn('restore', 'JSONから復元', 'upload') +
           btn('csv', 'CSV出力', 'download') +
           btn('reset', '全データを初期化', '', 'danger') +
-          '</div><p class="hint">データはこの端末のブラウザーに保存されます。別の端末へ移す場合はJSONを使用してください。</p>' +
+          '</div><p class="hint">端末間の自動同期はクラウド同期から開始できます。JSONバックアップは別の場所に保管してください。</p>' +
           '<div class="metric"><span>オフライン利用</span><strong>' +
           (navigator.serviceWorker?.controller ? '準備完了' : '未準備') +
           '</strong></div>'
